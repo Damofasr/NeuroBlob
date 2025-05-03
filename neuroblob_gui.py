@@ -58,7 +58,7 @@ class NeuroBlobGUI:
 
     def _draw_borders(self) -> None:
         """Отрисовка декоративных границ"""
-        border_color = (128, 128, 128)
+        border_color = (30, 30, 30)
         pygame.draw.rect(self.screen, border_color,
                          (0, UI_SETTINGS['header_height'],
                           self.screen.get_width(),
@@ -67,21 +67,22 @@ class NeuroBlobGUI:
     def _draw_header(self, manager: SimulationManager) -> None:
         """Отрисовка верхней информационной панели"""
         # Статистика
-        fps_text = self.font.render(f"FPS: {self.clock.get_fps():.1f}", True, (255, 255, 0))
+        fps_text = self.font.render(f"FPS:{self.clock.get_fps():5.1f}", True, (255, 255, 0))
         gen_text = self.font.render(f"Поколение: {manager.generation}", True, (255, 255, 255))
 
         # Позиционирование
-        self.screen.blit(fps_text, (10, 10))
-        self.screen.blit(gen_text, (10, 30))
+        self.screen.blit(fps_text, (665, 10))
+        self.screen.blit(gen_text, (10, 10))
 
         # Лучший агент
         if manager.best_agent:
             stats_text = self.font.render(
                 f"Лучший: Возраст {manager.best_agent.age} Счёт {manager.best_agent.score}",
                 True, (255, 255, 255))
-            self.screen.blit(stats_text, (200, 10))
+            self.screen.blit(stats_text, (10, 35))
 
-    def show_plots(self, stats: Dict[str, List]) -> None:
+    @staticmethod
+    def show_plots(stats: Dict[str, List]) -> None:
         """Отображение графиков статистики"""
         plt.figure("Эволюция показателей")
         plt.plot(stats['timestamps'], stats['scores'], label='Счёт')
