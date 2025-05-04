@@ -13,10 +13,9 @@ def main() -> None:
     # args = parser.parse_args()
 
     gui = NeuroBlobGUI()
-    manager = SimulationManager(brain_file='brains/best_brain_2.json')  # Передаем аргумент
-    running = True
-    drawing = True
+    manager = SimulationManager(brain_file='brains/best_brain_3.json')  # Передаем аргумент
 
+    running = True
     while running:
         gui.clock.tick()
 
