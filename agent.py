@@ -23,7 +23,7 @@ class Agent(WorldObject):
         VISION_RAYS (int): Количество зрительных лучей
         VISION_DISTANCE (float): Дальность зрения
         VISION_ANGLE (float): Угол обзора в радианах
-        LEARNINS (bool): Флаг включения обучения
+        LEARNING (bool): Флаг включения обучения
     """
 
     category = 'agent'
@@ -48,7 +48,7 @@ class Agent(WorldObject):
             x (float): Начальная X-координата
             y (float): Начальная Y-координата
         """
-        super().__init__(x, y, radius=6, color=(0, 100, 255))
+        super().__init__(x, y, size=6, color=(0, 100, 255))
         self.angle: float = random.uniform(0, 2 * math.pi)
         self.energy: float = 1.0
         self.health: float = 1.0

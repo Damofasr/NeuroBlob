@@ -24,7 +24,7 @@ class Food(WorldObject):
             y: Y-координата
             color: Цвет отрисовки
         """
-        super().__init__(x, y, radius=3, color=color)
+        super().__init__(x, y, size=3, color=color)
 
 
 class Poison(Food):
