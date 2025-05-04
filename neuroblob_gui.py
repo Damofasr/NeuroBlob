@@ -85,7 +85,7 @@ class NeuroBlobGUI:
     def show_plots(stats: Dict[str, List]) -> None:
         """Отображение графиков статистики"""
         plt.figure("Эволюция показателей")
-        plt.plot(stats['timestamps'], stats['scores'], label='Счёт')
+        plt.plot( stats['scores'], label='Счёт')
         plt.xlabel("Время")
         plt.ylabel("Показатели")
         plt.legend()

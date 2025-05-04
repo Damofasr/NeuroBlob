@@ -65,7 +65,7 @@ class SimulationManager:
         self.generation += 1
         self._reset_world()
         self._create_new_population()
-        self.best_agent = None
+        # self.best_agent = None
 
     def _reset_world(self) -> None:
         """Полная переинициализация мира"""
@@ -93,12 +93,12 @@ class SimulationManager:
 
     def _update_stats(self) -> None:
         """Обновление статистики симуляции"""
-        self.current_tick += 1
-        self.stats['timestamps'].append(pygame.time.get_ticks())
+        self.stats['timestamps'].append(self.current_tick)
         self.stats['scores'].append(self.best_agent.score if self.best_agent else 0)
 
     def update(self) -> None:
         """Основной цикл обновления"""
+        self.current_tick += 1
         self.world.update()
         self._check_agents_state()
 
