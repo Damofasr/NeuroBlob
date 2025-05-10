@@ -6,11 +6,7 @@ from config import *
 
 
 def main() -> None:
-    """Основная функция с обработкой аргументов"""
-    # parser = argparse.ArgumentParser(description='NeuroBlob Simulation')
-    # parser.add_argument('-l', '--load', type=str,
-    #                    help='Путь к файлу мозга для загрузки')
-    # args = parser.parse_args()
+    """Основная функция"""
 
     gui = NeuroBlobGUI()
     manager = SimulationManager(brain_file='brains/best_brain_3.json')  # Передаем аргумент
