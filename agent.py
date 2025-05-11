@@ -4,7 +4,6 @@ import pygame
 import pygame.gfxdraw
 from typing import Optional, Tuple, List, Set
 import numpy as np
-from world import World
 from world_object import WorldObject
 from neuroblob import NeuroBlob
 
@@ -249,35 +248,6 @@ class Agent(WorldObject):
         t0 = t_ca - t_hc
         t1 = t_ca + t_hc
         return t0 if t0 >= 0 else (t1 if t1 >= 0 else None)
-
-    def _intersect_ray_wall(self, ray_dir: Tuple[float, float],
-                            world: World) -> Optional[float]:
-        """Расчёт пересечения луча с границами мира"""
-        x, y = self.position
-        
-        if (self.VISION_DISTANCE < x < world.width - self.VISION_DISTANCE and
-                self.VISION_DISTANCE < y < world.height - self.VISION_DISTANCE):
-            return None
-
-        max_x = self.VISION_DISTANCE * ray_dir[0] + x
-        max_y = self.VISION_DISTANCE * ray_dir[1] + y
-
-        if 0.0 < max_x < world.width and 0.0 < max_y < world.height:
-            return None
-
-        dist = self.VISION_DISTANCE
-
-        if max_x > world.width:
-            dist = min(dist, (world.width - x) / ray_dir[0])
-        elif max_x < 0.0:
-            dist = min(dist, -x / ray_dir[0])
-
-        if max_y > world.height:
-            dist = min(dist, (world.height - y) / ray_dir[1])
-        elif max_y < 0.0:
-            dist = min(dist, -y / ray_dir[1])
-
-        return dist
 
     def _intersect_ray_rectangle(self, ray_dir: Tuple[float, float],
                                  obj: WorldObject) -> Optional[float]:
