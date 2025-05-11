@@ -93,7 +93,7 @@ class NeuroBlob:
         self.W += mask * mutation
         np.clip(self.W, -1.0, 1.0, out=self.W)
 
-    def learn(self, reward: float, lr: float = 0.01) -> None:
+    def learn(self, scale: float = 0.0001, forgotten_rate: float = 0.0) -> None:
         """
         Обучение методом Хебба с регуляризацией
         
@@ -101,8 +101,15 @@ class NeuroBlob:
             scale: Масштаб изменений весов сети
             forgotten_rate: Скорость забывания (затухание всех весов)
         """
-        delta = lr * reward * np.outer(self.state, self.state)
+        # Обучение по правилу Хебба (нейроны, активирующиеся вместе, связываются сильнее)
+        delta = scale * np.outer(self.state, self.state)
         self.W += delta[-self.n_recurrent:, :]
+        
+        # Регуляризация весов (предотвращение чрезмерного роста)
+        if forgotten_rate > 0.0:
+            self.W *= (1.0 - forgotten_rate)
+            
+        # Ограничение диапазона весов
         np.clip(self.W, -1.0, 1.0, out=self.W)
 
     def save(self, filename: str) -> None:

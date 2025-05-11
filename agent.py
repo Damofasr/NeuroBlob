@@ -152,6 +152,10 @@ class Agent(WorldObject):
         if self.LEARNING and self.brain:
             self._update_learning(prev_e, prev_h)
 
+            # Легкое затухание весов для предотвращения застревания
+            if self.age % 100 == 0:  # Периодическое затухание
+                self.brain.W *= 0.999
+
     @property
     def grid_radius(self) -> float:
         """
@@ -220,7 +224,7 @@ class Agent(WorldObject):
 
         self.score += 1 if food.ENERGY_COST else -1
         if self.LEARNING:
-            self.brain.learn(reward=1.0, lr=0.0001)
+            self.brain.learn(scale=0.0001)
 
     def _intersect_ray_circle(self, ray_dir: Tuple[float, float],
                               obj: WorldObject) -> Optional[float]:
@@ -350,16 +354,16 @@ class Agent(WorldObject):
         """Обновление параметров обучения"""
         delta_h = self.health - prev_h
         delta_e = self.energy - prev_e
-
-        self.brain.learn(reward=0.1 * delta_h, lr=0.01)
-
-        if delta_e < 0:
-            self.brain.learn(reward=0.1 * delta_e, lr=0.01)
-
-        if self.energy > 0.9:
-            self.brain.learn(reward=0.01, lr=0.001)
-        elif self.energy < 0.1:
-            self.brain.learn(reward=-0.01, lr=0.001)
-
+        
+        # Базовый масштаб для всех обучающих сигналов
+        BASE_SCALE = 0.00001
+        
+        # Здоровье (важнее энергии)
+        self.brain.learn(scale=3 * BASE_SCALE * delta_h, forgotten_rate=0.00001)
+        
+        # Энергия
+        self.brain.learn(scale=BASE_SCALE * delta_e, forgotten_rate=0.00001)  # Для всех случаев, без условия
+        
+        # Критические состояния
         if self.health == 0.0:
-            self.brain.learn(reward=-1.0, lr=0.005)
+            self.brain.learn(scale=-10 * BASE_SCALE, forgotten_rate=0.0001)  # В 10 раз сильнее базового
