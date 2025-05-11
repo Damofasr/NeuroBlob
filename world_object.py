@@ -1,7 +1,8 @@
+from __future__ import annotations
 import numpy as np
 import pygame
 import uuid
-from typing import Tuple, Union
+from typing import Tuple, Union, Set
 
 
 class WorldObject:
@@ -28,7 +29,7 @@ class WorldObject:
         Args:
             x: Начальная X-координата
             y: Начальная Y-координата
-            radius: Радиус объекта
+            size: Размер объекта. Может быть кругом или прямоугольником
             color: Цвет отрисовки
         """
         self.id = uuid.uuid4()
@@ -44,6 +45,17 @@ class WorldObject:
     def __eq__(self, other: object) -> bool:
         """Сравнение по ID"""
         return isinstance(other, WorldObject) and self.id == other.id
+
+    def pre_update(self, nearest: Set[WorldObject]) -> None:
+        pass
+
+    def update(self, nearest: Set[WorldObject]) -> WorldObject:
+        pass
+
+    @property
+    def grid_radius(self) -> float:
+        """Обратная совместимость: возвращает радиус для сетки"""
+        return self.radius*2
 
     @property
     def radius(self) -> float:
@@ -74,6 +86,46 @@ class WorldObject:
         """Высота прямоугольника"""
         return self.size[1] if self.is_rectangle else 2 * self.size
 
+    def collide(self, obj: WorldObject):
+        match (self.is_circle, obj.is_circle):
+            case (True, True):
+                # Столкновение двух кругов: оба подвижны
+                d_pos = self.position - obj.position
+                distance = np.hypot(d_pos[0], d_pos[1])
+                min_distance = self.radius + obj.radius
+
+                if distance < min_distance and distance != 0:
+                    # Корректируем оба объекта
+                    correction = d_pos / distance * (min_distance - distance) / 2
+                    self.position += correction
+                    obj.position -= correction
+
+            case (True, False):
+                # Круг и неподвижный прямоугольник: корректируем только круг
+                closest_x = np.clip(self.x,
+                                    obj.x - obj.width / 2,
+                                    obj.x + obj.width / 2)
+                closest_y = np.clip(self.y,
+                                    obj.y - obj.height / 2,
+                                    obj.y + obj.height / 2)
+
+                d_pos = np.array([self.x - closest_x, self.y - closest_y])
+                distance = np.hypot(d_pos[0], d_pos[1])
+
+                if distance < self.radius and distance != 0:
+                    # Корректируем только круг
+                    correction = d_pos / distance * (self.radius - distance)
+                    self.position += correction
+
+            case (False, True):
+                # Неподвижный прямоугольник и круг: делегируем предыдущему случаю
+                obj.collide(self)
+
+            case (False, False):
+                # Столкновение двух неподвижных прямоугольников: игнорируем
+                pass
+
+
     @property
     def position(self) -> np.ndarray:
         """Текущая позиция в виде numpy массива [x, y]"""
@@ -92,9 +144,15 @@ class WorldObject:
             surface: Целевая поверхность для рисования
             offset: Смещение координат (для камеры)
         """
-        pygame.draw.circle(
-            surface,
-            self.color,
-            (int(self.x + offset[0]), int(self.y + offset[1])),
-            int(self.radius)
-        )
+        if self.is_circle:
+            pygame.draw.circle(
+                surface,
+                self.color,
+                (int(self.x + offset[0]), int(self.y + offset[1])),
+                int(self.radius)
+            )
+        if self.is_rectangle:
+            pygame.draw.rect(surface,
+                             self.color,
+                             (self.x-self.width/2, self.y-self.height/2, self.width, self.height)
+                             )

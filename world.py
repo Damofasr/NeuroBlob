@@ -1,5 +1,6 @@
 import random
 import pygame
+from wall import Wall
 from typing import Dict, Set, Tuple, List, Optional
 from world_object import WorldObject
 
@@ -30,6 +31,26 @@ class World:
         self.grid_size = (8, 6)  # (columns, rows)
         self.grid: Dict[Tuple[int, int], Set[WorldObject]] = self._create_empty_grid()
 
+        wall_width = 2
+        self._add_wall((0, self.height/2), (wall_width, self.height))
+        self._add_wall((self.width, self.height/2), (wall_width, self.height))
+        self._add_wall((self.width/2, 0), (self.width, wall_width))
+        self._add_wall((self.width/2, self.height), (self.width, wall_width))
+
+    def _add_wall(self, pos, size):
+
+        obj = Wall(pos[0], pos[1], size=size)
+        category = obj.category
+
+        # Добавляем в категорию
+        if category not in self.objects_by_category:
+            self.objects_by_category[category] = set()
+        self.objects_by_category[category].add(obj)
+
+        # Добавляем в сетку
+        cells = self._get_object_cells(obj)
+        self._add_to_grid(obj, cells)
+
     def _create_empty_grid(self) -> Dict[Tuple[int, int], Set[WorldObject]]:
         """Инициализирует пустую сетку"""
         return {(x, y): set() for x in range(self.grid_size[0])
@@ -49,10 +70,10 @@ class World:
             return set()
 
         # Рассчитываем границы объекта в относительных координатах
-        left = (obj.x - obj.radius) / self.width
-        right = (obj.x + obj.radius) / self.width
-        bottom = (obj.y - obj.radius) / self.height
-        top = (obj.y + obj.radius) / self.height
+        left = (obj.x - obj.width/2) / self.width
+        right = (obj.x + obj.width/2) / self.width
+        bottom = (obj.y - obj.height/2) / self.height
+        top = (obj.y + obj.height/2) / self.height
 
         # Преобразуем в индексы сетки
         min_col = max(0, int(left * self.grid_size[0]))
@@ -83,15 +104,14 @@ class World:
         self._add_to_grid(obj, new_cells - (old_cells or set()))
 
     def add_object(self, obj_class: type, count: int = 1,
-                   x: Optional[float] = None, y: Optional[float] = None) -> List[WorldObject]:
+                   pos: Optional[Tuple[float, float]] = None) -> List[WorldObject]:
         """
         Добавляет объекты в мир
 
         Args:
             obj_class (type): Класс создаваемого объекта
             count (int): Количество объектов для создания
-            x (Optional[float]): Фиксированная X-координата (None для случайной)
-            y (Optional[float]): Фиксированная Y-координата (None для случайной)
+            pos (Optional[float]): Фиксированные X,Y-координата (None для случайной)
 
         Returns:
             List[WorldObject]: Список созданных объектов
@@ -99,8 +119,7 @@ class World:
         added = []
         for _ in range(count):
             # Генерируем координаты если не заданы
-            pos_x = x if x is not None else random.uniform(0, self.width)
-            pos_y = y if y is not None else random.uniform(0, self.height)
+            pos_x, pos_y = pos if pos is not None else (random.uniform(0, self.width), random.uniform(0, self.height))
 
             obj = obj_class(pos_x, pos_y)
             category = obj.category
@@ -182,19 +201,24 @@ class World:
 
     def update(self):
         """Основной метод обновления состояния мира"""
-        # Сенсорная фаза
-        for agent in self.get_objects('agent'):
-            agent.sense(self)
-
-        # Фаза мышления
-        for agent in self.get_objects('agent'):
-            agent.think(steps_count=1)
 
         # Фаза действий
-        for agent in self.get_objects('agent'):
-            old_cells = self._get_object_cells(agent)
-            agent.act(self)
-            self._update_object_in_grid(agent, old_cells)
+        for obj in self.get_objects('agent'):
+            old_cells = self._get_object_cells(obj)
+            nearests = self.get_objects_in_area(obj.x, obj.y, obj.grid_radius)
+            interacted_object = obj.update(nearests)
+
+            if interacted_object:
+                self.remove_object(interacted_object)
+                self.add_object(type(interacted_object))
+
+            closest = self.get_objects_in_area(obj.x, obj.y, obj.radius)
+            for close in closest:
+                old_cells = self._get_object_cells(close)
+                obj.collide(close)
+                self._update_object_in_grid(close, old_cells)
+
+            self._update_object_in_grid(obj, old_cells)
 
     def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
         """Отрисовка всех объектов мира"""
