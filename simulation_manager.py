@@ -1,5 +1,4 @@
 import copy
-import pygame
 from typing import Optional
 from agent import Agent
 from food import Food, Poison
@@ -65,7 +64,7 @@ class SimulationManager:
         self.generation += 1
         self._reset_world()
         self._create_new_population()
-        # self.best_agent = None
+        self.best_agent = None
 
     def _reset_world(self) -> None:
         """Полная переинициализация мира"""
@@ -74,8 +73,8 @@ class SimulationManager:
 
     def _spawn_objects(self) -> None:
         """Создание начальных объектов в мире"""
-        self.world.add_object(Food, count=50)
-        self.world.add_object(Poison, count=50)
+        self.world.add_object(Food, count=20)
+        self.world.add_object(Poison, count=20)
         self.world.add_object(Agent, count=10)
 
     def _create_new_population(self) -> None:
@@ -101,15 +100,16 @@ class SimulationManager:
         self.current_tick += 1
         self.world.update()
         self._check_agents_state()
+        for agent in self.world.get_objects('agent'):
+            self._evaluate_agent(agent)
 
     def _check_agents_state(self) -> None:
         """Проверка состояния агентов и обновление лучшего"""
         for agent in self.world.get_objects('agent'):
-            if agent.health <= 0 or self.current_tick > UI_SETTINGS['simulation_duration']:
-                self._evaluate_agent(agent)
+            if agent.health <= 0:
                 self.world.remove_object(agent)
 
     def _evaluate_agent(self, agent: Agent) -> None:
         """Оценка пригодности агента"""
         if not self.best_agent or agent.score > self.best_agent.score:
-            self.best_agent = copy.deepcopy(agent)
+            self.best_agent = agent

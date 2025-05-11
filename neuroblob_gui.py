@@ -53,7 +53,13 @@ class NeuroBlobGUI:
             UI_SETTINGS['border_width'],
             UI_SETTINGS['header_height'] + UI_SETTINGS['border_width']
         )
+
+        # Отметка лучшего
+        if manager.best_agent:
+            pygame.draw.circle(self.world_surface, (250, 250, 0), manager.best_agent.position, manager.best_agent.radius*5, width=1)
+
         self.screen.blit(self.world_surface, world_pos)
+
         pygame.display.flip()
 
     def _draw_borders(self) -> None:
@@ -77,7 +83,7 @@ class NeuroBlobGUI:
         # Лучший агент
         if manager.best_agent:
             stats_text = self.font.render(
-                f"Лучший: Возраст {manager.best_agent.age} Счёт {manager.best_agent.score}",
+                f"Лучший счёт: {manager.best_agent.score}",
                 True, (255, 255, 255))
             self.screen.blit(stats_text, (10, 35))
 
@@ -89,4 +95,6 @@ class NeuroBlobGUI:
         plt.xlabel("Время")
         plt.ylabel("Показатели")
         plt.legend()
+        plt.grid(True, which="both")
+        plt.grid()
         plt.show()
