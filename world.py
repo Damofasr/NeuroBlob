@@ -103,7 +103,7 @@ class World:
             self.grid[cell].discard(obj)
 
     def _update_object_in_grid(self, obj: WorldObject,
-                              old_cells: Optional[Set[Tuple[int, int]]] = None) -> None:
+                               old_cells: Optional[Set[Tuple[int, int]]] = None) -> None:
         """Обновляет положение объекта в сетке (только для перемещений)"""
         new_cells = self._get_object_cells(obj)
 
