@@ -9,7 +9,7 @@ def main() -> None:
     """Основная функция"""
 
     gui = NeuroBlobGUI()
-    manager = SimulationManager(brain_file='brains/best_brain_3.json')  # Передаем аргумент
+    manager = SimulationManager(brain_file='brains/best_brain_6.json')  # Передаем аргумент
 
     running = True
     while running:
@@ -30,7 +30,7 @@ def main() -> None:
             gui.draw(manager.world, manager)
 
         # Перезапуск поколения
-        if not manager.world.get_objects('agent'):
+        if not manager.world.get_objects('agent') or manager.current_tick > UI_SETTINGS['simulation_duration']:
             manager.start_new_generation()
 
     # Завершение работы
