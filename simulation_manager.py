@@ -46,7 +46,13 @@ class SimulationManager:
         self.start_new_generation()
 
     def _load_initial_brain(self) -> None:
-        """Загрузка начального мозга из файла"""
+        """
+        Загрузка начального мозга из файла
+        
+        Создает временного агента для загрузки параметров нейросети
+        из указанного файла и сохраняет его как лучшего агента
+        для инициализации первого поколения.
+        """
         temp_agent = Agent((0, 0))
         temp_agent.brain.load(self.brain_file)
         self.best_agent = temp_agent
@@ -78,10 +84,15 @@ class SimulationManager:
         self.world.add_object(Agent, count=10)
 
     def _create_new_population(self) -> None:
-        """Создание популяции с учётом загруженного мозга"""
-        # if self.brain_file and not self.best_agent:
-        #     self._load_initial_brain()
-
+        """
+        Создание популяции с учётом загруженного мозга
+        
+        Каждый агент получает копию мозга лучшего агента
+        из предыдущего поколения, после чего параметры нейросети 
+        подвергаются случайным мутациям для обеспечения разнообразия.
+        Если лучший агент не определен, новое поколение создается 
+        со случайными параметрами.
+        """
         if not self.best_agent:
             return
 

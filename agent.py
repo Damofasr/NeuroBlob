@@ -154,7 +154,12 @@ class Agent(WorldObject):
 
     @property
     def grid_radius(self) -> float:
-        """Обратная совместимость: возвращает радиус для сетки"""
+        """
+        Возвращает радиус области, в которой агент может обнаруживать объекты
+        
+        Returns:
+            float: Дальность видимости агента (VISION_DISTANCE)
+        """
         return self.VISION_DISTANCE
 
     def _rotate(self, d_theta: float) -> None:

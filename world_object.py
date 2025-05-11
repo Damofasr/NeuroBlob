@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import pygame
 import uuid
-from typing import Tuple, Union, Set
+from typing import Tuple, Union, Set, Optional
 
 
 class WorldObject:
@@ -45,9 +45,24 @@ class WorldObject:
         return isinstance(other, WorldObject) and self.id == other.id
 
     def pre_update(self, nearest: Set[WorldObject]) -> None:
+        """
+        Предварительная обработка объекта перед основным обновлением
+        
+        Args:
+            nearest (Set[WorldObject]): Множество ближайших объектов
+        """
         pass
 
-    def update(self, nearest: Set[WorldObject]) -> WorldObject:
+    def update(self, nearest: Set[WorldObject]) -> Optional[WorldObject]:
+        """
+        Основной метод обновления состояния объекта
+        
+        Args:
+            nearest (Set[WorldObject]): Множество ближайших объектов
+            
+        Returns:
+            Optional[WorldObject]: Объект, с которым произошло взаимодействие (если было)
+        """
         pass
 
     @property
@@ -85,6 +100,15 @@ class WorldObject:
         return self.size[1] if self.is_rectangle else 2 * self.size
 
     def collide(self, obj: WorldObject):
+        """
+        Обработка столкновения с другим объектом
+        
+        Корректирует позиции объектов в зависимости от их типов (круг/прямоугольник)
+        для предотвращения наложения друг на друга.
+        
+        Args:
+            obj (WorldObject): Объект, с которым проверяется столкновение
+        """
         match (self.is_circle, obj.is_circle):
             case (True, True):
                 # Столкновение двух кругов: оба подвижны
@@ -122,7 +146,6 @@ class WorldObject:
             case (False, False):
                 # Столкновение двух неподвижных прямоугольников: игнорируем
                 pass
-
 
     @property
     def position(self) -> Union[np.ndarray, Tuple[float, float]]:
