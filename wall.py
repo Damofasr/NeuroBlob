@@ -5,5 +5,12 @@ from typing import Tuple
 class Wall(WorldObject):
     category = "wall"
 
-    def __init__(self, x: float, y: float, size: Tuple[float, float]):
-        super().__init__(x, y, size = size, color = (127, 127, 127))
+    def __init__(self, pos: Tuple[float, float], size: Tuple[float, float]):
+        """
+        Инициализация стены
+        
+        Args:
+            pos (Tuple[float, float]): Координаты центра стены (x, y)
+            size (Tuple[float, float]): Размеры стены (ширина, высота)
+        """
+        super().__init__(pos, size=size, color=(127, 127, 127))
