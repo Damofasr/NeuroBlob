@@ -3,6 +3,7 @@ import random
 import pygame
 import pygame.gfxdraw
 from typing import Optional, Tuple, List, Set
+import numpy as np
 from world import World
 from world_object import WorldObject
 from neuroblob import NeuroBlob
@@ -175,9 +176,8 @@ class Agent(WorldObject):
         dx = math.cos(self.angle) * velocity
         dy = math.sin(self.angle) * velocity
 
-
-        self.x = self.x + dx
-        self.y = self.y + dy
+        new_pos = self.position + np.array([dx, dy])
+        self.position = new_pos
 
     def _apply_energy_cost(self, cost: float) -> None:
         """Расход энергии с учётом возможного дефицита"""
@@ -253,12 +253,14 @@ class Agent(WorldObject):
     def _intersect_ray_wall(self, ray_dir: Tuple[float, float],
                             world: World) -> Optional[float]:
         """Расчёт пересечения луча с границами мира"""
-        if (self.VISION_DISTANCE < self.x < world.width - self.VISION_DISTANCE and
-                self.VISION_DISTANCE < self.y < world.height - self.VISION_DISTANCE):
+        x, y = self.position
+        
+        if (self.VISION_DISTANCE < x < world.width - self.VISION_DISTANCE and
+                self.VISION_DISTANCE < y < world.height - self.VISION_DISTANCE):
             return None
 
-        max_x = self.VISION_DISTANCE * ray_dir[0] + self.x
-        max_y = self.VISION_DISTANCE * ray_dir[1] + self.y
+        max_x = self.VISION_DISTANCE * ray_dir[0] + x
+        max_y = self.VISION_DISTANCE * ray_dir[1] + y
 
         if 0.0 < max_x < world.width and 0.0 < max_y < world.height:
             return None
@@ -266,19 +268,19 @@ class Agent(WorldObject):
         dist = self.VISION_DISTANCE
 
         if max_x > world.width:
-            dist = min(dist, (world.width - self.x) / ray_dir[0])
+            dist = min(dist, (world.width - x) / ray_dir[0])
         elif max_x < 0.0:
-            dist = min(dist, -self.x / ray_dir[0])
+            dist = min(dist, -x / ray_dir[0])
 
         if max_y > world.height:
-            dist = min(dist, (world.height - self.y) / ray_dir[1])
+            dist = min(dist, (world.height - y) / ray_dir[1])
         elif max_y < 0.0:
-            dist = min(dist, -self.y / ray_dir[1])
+            dist = min(dist, -y / ray_dir[1])
 
         return dist
 
     def _intersect_ray_rectangle(self, ray_dir: Tuple[float, float],
-                            obj: WorldObject) -> Optional[float]:
+                                 obj: WorldObject) -> Optional[float]:
         """Расчёт пересечения луча с прямоугольным объектом"""
 
         dx, dy = obj.position - self.position
@@ -291,22 +293,22 @@ class Agent(WorldObject):
         dist = self.VISION_DISTANCE
 
         for x_edge in (max_x, min_x):
-            if x_edge*ray_dir[0]>0:
-                inter_y = x_edge/ray_dir[0]*ray_dir[1]
-                if (max_y - inter_y)*(min_y - inter_y) <= 0:
-                    dist = min(x_edge/ray_dir[0], dist)
+            if x_edge * ray_dir[0] > 0:
+                inter_y = x_edge / ray_dir[0] * ray_dir[1]
+                if (max_y - inter_y) * (min_y - inter_y) <= 0:
+                    dist = min(x_edge / ray_dir[0], dist)
 
         for y_edge in (max_y, min_y):
-            if y_edge*ray_dir[1]>0:
-                inter_x = y_edge/ray_dir[1]*ray_dir[0]
-                if (max_x - inter_x)*(min_x - inter_x) <= 0:
-                    dist = min(y_edge/ray_dir[1], dist)
+            if y_edge * ray_dir[1] > 0:
+                inter_x = y_edge / ray_dir[1] * ray_dir[0]
+                if (max_x - inter_x) * (min_x - inter_x) <= 0:
+                    dist = min(y_edge / ray_dir[1], dist)
 
         return dist
 
     def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
         """Отрисовка агента и его визуальных индикаторов"""
-        x, y = (self.x + offset[0], self.y + offset[1])
+        x, y = int(self.x + offset[0]), int(self.y + offset[1])
 
         # Отрисовка лучей зрения
         for i in range(self.VISION_RAYS):
@@ -315,8 +317,8 @@ class Agent(WorldObject):
 
             ray_angle = (self.angle - self.VISION_ANGLE / 2 +
                          (i / (self.VISION_RAYS - 1)) * self.VISION_ANGLE)
-            tip_x = x + math.cos(ray_angle) * dist
-            tip_y = y + math.sin(ray_angle) * dist
+            tip_x = int(x + math.cos(ray_angle) * dist)
+            tip_y = int(y + math.sin(ray_angle) * dist)
             pygame.draw.line(surface, color, (x, y), (tip_x, tip_y), 2)
 
         # Индикаторы состояния
@@ -329,11 +331,11 @@ class Agent(WorldObject):
         # Индикатор питания
         if self.outputs[2] > self.CONSUME_LEVEL:
             pygame.draw.circle(surface, (255, 255, 0),
-                               (int(x), int(y)), self.radius)
+                               (x, y), int(self.radius))
 
         # Направление взгляда
-        tip_x = x + math.cos(self.angle) * self.radius
-        tip_y = y + math.sin(self.angle) * self.radius
+        tip_x = int(x + math.cos(self.angle) * self.radius)
+        tip_y = int(y + math.sin(self.angle) * self.radius)
         pygame.draw.line(surface, (255, 255, 255), (x, y), (tip_x, tip_y), 2)
 
     def _draw_attribute(self, surface: pygame.Surface, factor: float,

@@ -56,7 +56,14 @@ class NeuroBlobGUI:
 
         # Отметка лучшего
         if manager.best_agent:
-            pygame.draw.circle(self.world_surface, (250, 250, 0), manager.best_agent.position, manager.best_agent.radius*5, width=1)
+            pos = manager.best_agent.position
+            pygame.draw.circle(
+                self.world_surface, 
+                (250, 250, 0), 
+                (int(pos[0]), int(pos[1])), 
+                int(manager.best_agent.radius*5), 
+                width=1
+            )
 
         self.screen.blit(self.world_surface, world_pos)
 
