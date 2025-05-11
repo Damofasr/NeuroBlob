@@ -203,16 +203,18 @@ class World:
                 candidates.update(self.grid.get((col, row), set()))
 
         # Точная проверка расстояния
-        radius_sq = radius ** 2
         return {obj for obj in candidates
                 if sum((obj.position - pos) ** 2) <= (radius + obj.radius) ** 2}
 
     def update(self):
         """Основной метод обновления состояния мира"""
-
+        
+        # Получаем копию списка агентов
+        agents = list(self.get_objects('agent'))
+        
         # Фаза действий
-        for obj in self.get_objects('agent'):
-            old_cells = self._get_object_cells(obj)
+        for obj in agents:
+            obj_old_cells = self._get_object_cells(obj)
             nearests = self.get_objects_in_area(obj.position, obj.grid_radius)
             interacted_object = obj.update(nearests)
 
@@ -226,7 +228,13 @@ class World:
                 obj.collide(close)
                 self._update_object_in_grid(close, old_cells)
 
-            self._update_object_in_grid(obj, old_cells)
+            # Проверка здоровья агента после всех взаимодействий
+            if hasattr(obj, 'health') and obj.health <= 0:
+                self.remove_object(obj)
+                continue
+            
+            # Обновляем только если агент всё ещё жив
+            self._update_object_in_grid(obj, obj_old_cells)
 
     def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
         """Отрисовка всех объектов мира"""
