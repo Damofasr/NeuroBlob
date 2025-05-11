@@ -54,6 +54,7 @@ class Agent(WorldObject):
         self.health: float = 1.0
         self.age: int = 0
         self.score: int = 0
+        self.interacted_object = None
 
         self.inputs: List[float] = []
         self.outputs: List[float] = [0.0, 0.0, 0.0]  # d_theta, velocity, eat_flag
@@ -64,12 +65,20 @@ class Agent(WorldObject):
         self.brain = NeuroBlob(n_input=n_input, n_hidden=n_hidden,
                                n_output=n_output, allow_self_connections=True)
 
-    def sense(self, world: World) -> None:
+    def update(self, nearests: Set[WorldObject], think_steps=1) -> Optional[WorldObject]:
+        self.interacted_object = None
+        self._sense(nearests)
+        self._think(think_steps)
+        self._act(nearests)
+
+        return self.interacted_object
+
+    def _sense(self, nearests: Set[WorldObject]) -> None:
         """
         Сбор информации об окружающей среде через зрительные лучи
 
         Args:
-            world (World): Ссылка на игровой мир
+            nearests (Set[WorldObject]): Ссылка на ближайшие объекты
         """
         inputs = []
         for i in range(self.VISION_RAYS):
@@ -80,23 +89,16 @@ class Agent(WorldObject):
             best_score = 0.0
             best_color = [0.0, 0.0, 0.0]
 
-            # Проверка пересечения со стенами
-            dist = self._intersect_ray_rectangle(ray_dir, world)
-            if dist is not None and dist <= self.VISION_DISTANCE:
-                proximity = 1.0 - (dist / self.VISION_DISTANCE)
-                best_score = proximity
-                best_color = [0.5, 0.5, 0.5]
-
             # Проверка объектов в сетке
-            for obj in world.get_objects_in_area(self.x, self.y, self.VISION_DISTANCE):
+            dist = None
+            for obj in nearests:
                 if obj is self:
                     continue
 
-                match obj.category:
-                    case 'wall':
-                        dist = self._intersect_ray_rectangle(ray_dir, world)
-                    case _:
-                        dist = self._intersect_ray_circle(ray_dir, obj)
+                if obj.is_circle:
+                    dist = self._intersect_ray_circle(ray_dir, obj)
+                if obj.is_rectangle:
+                    dist = self._intersect_ray_rectangle(ray_dir, obj)
 
                 if dist is None or dist > self.VISION_DISTANCE:
                     continue
@@ -112,21 +114,21 @@ class Agent(WorldObject):
         inputs.append(1 - self.health)
         self.inputs = inputs
 
-    def think(self, steps_count: int = 1) -> None:
+    def _think(self, think_steps: int = 1) -> None:
         """
         Обработка собранных данных нейросетью
 
         Args:
-            steps_count (int): Количество шагов обработки нейросети
+            think_steps (int): Количество шагов обработки нейросети
         """
-        self.outputs = self.brain.step(self.inputs, steps_count=steps_count)
+        self.outputs = self.brain.step(self.inputs, steps_count=think_steps)
 
-    def act(self, world: World) -> None:
+    def _act(self, nearests: Set[WorldObject]) -> None:
         """
         Выполнение действий на основе решений нейросети
 
         Args:
-            world (World): Ссылка на игровой мир
+            nearests (Set[WorldObject]): Ссылка на ближайшие объекты
         """
         d_theta, velocity, eat_flag = self.outputs
         d_theta *= 0.1
@@ -134,14 +136,14 @@ class Agent(WorldObject):
 
         # Движение
         self._rotate(d_theta)
-        self._move(world, velocity)
+        self._move(velocity)
 
         # Расчёт изменений состояния
         prev_e = self.energy
         prev_h = self.health
 
         if eat_flag > self.CONSUME_LEVEL:
-            self._consume_if_possible(world)
+            self._consume_if_possible(nearests)
 
         total_cost = self.PASSIVE_COST + self.MOVEMENT_COST_FACTOR * velocity ** 2
         self._apply_energy_cost(total_cost)
@@ -151,18 +153,23 @@ class Agent(WorldObject):
         if self.LEARNING and self.brain:
             self._update_learning(prev_e, prev_h)
 
+    @property
+    def grid_radius(self) -> float:
+        """Обратная совместимость: возвращает радиус для сетки"""
+        return self.VISION_DISTANCE
+
     def _rotate(self, d_theta: float) -> None:
         """Обновление угла поворота агента"""
         self.angle = (self.angle + d_theta) % (2 * math.pi)
 
-    def _move(self, world: World, velocity: float) -> None:
+    def _move(self, velocity: float) -> None:
         """Перемещение агента с учётом границ мира"""
         dx = math.cos(self.angle) * velocity
         dy = math.sin(self.angle) * velocity
 
 
-        self.x = max(self.radius, min(self.x + dx, world.width - self.radius))
-        self.y = max(self.radius, min(self.y + dy, world.height - self.radius))
+        self.x = self.x + dx
+        self.y = self.y + dy
 
     def _apply_energy_cost(self, cost: float) -> None:
         """Расход энергии с учётом возможного дефицита"""
@@ -180,28 +187,32 @@ class Agent(WorldObject):
             self.health += heal
             self.energy -= heal
 
-    def _consume_if_possible(self, world: World) -> None:
+    def _consume_if_possible(self, nearests: Set[WorldObject]) -> None:
         """Попытка потребления ближайшего объекта"""
         self._apply_energy_cost(self.BITING_COST)
 
-        for food in world.get_objects('food'):
-            dx = food.x - self.x
-            dy = food.y - self.y
+        for obj in nearests:
+            dx = obj.x - self.x
+            dy = obj.y - self.y
             distance = math.hypot(dx, dy)
             angle = (math.atan2(dy, dx) + math.pi - self.angle) % math.tau - math.pi
 
-            if distance > self.radius + food.radius or abs(angle) > self.VISION_ANGLE / 2:
+            if distance > (self.radius + obj.radius)*1.2 or abs(angle) > self.VISION_ANGLE / 2:
                 continue
 
-            self._process_consumption(world, food)
+            match obj.category:
+                case 'food':
+                    self._process_consumption(obj)
+                    self.interacted_object = obj
+                case _:
+                    pass
+
             return
 
-    def _process_consumption(self, world: World, food: WorldObject) -> None:
+    def _process_consumption(self, food: WorldObject) -> None:
         """Обработка успешного потребления объекта"""
-        world.remove_object(food)
         self.energy = min(1.0, self.energy + food.ENERGY_COST)
         self.health = max(0.0, self.health + food.HEALTH_COST)
-        world.add_object(type(food))
 
         self.score += 1 if food.ENERGY_COST else -1
         if self.LEARNING:
@@ -231,8 +242,8 @@ class Agent(WorldObject):
         t1 = t_ca + t_hc
         return t0 if t0 >= 0 else (t1 if t1 >= 0 else None)
 
-    def _intersect_ray_rectangle(self, ray_dir: Tuple[float, float],
-                                 world: World) -> Optional[float]:
+    def _intersect_ray_wall(self, ray_dir: Tuple[float, float],
+                            world: World) -> Optional[float]:
         """Расчёт пересечения луча с границами мира"""
         if (self.VISION_DISTANCE < self.x < world.width - self.VISION_DISTANCE and
                 self.VISION_DISTANCE < self.y < world.height - self.VISION_DISTANCE):
@@ -258,6 +269,33 @@ class Agent(WorldObject):
 
         return dist
 
+    def _intersect_ray_rectangle(self, ray_dir: Tuple[float, float],
+                            obj: WorldObject) -> Optional[float]:
+        """Расчёт пересечения луча с прямоугольным объектом"""
+
+        dx, dy = obj.position - self.position
+
+        max_x = dx + obj.width/2
+        min_x = dx - obj.width/2
+        max_y = dy + obj.height/2
+        min_y = dy - obj.height/2
+
+        dist = self.VISION_DISTANCE
+
+        for x_edge in (max_x, min_x):
+            if x_edge*ray_dir[0]>0:
+                inter_y = x_edge/ray_dir[0]*ray_dir[1]
+                if (max_y - inter_y)*(min_y - inter_y) <= 0:
+                    dist = min(x_edge/ray_dir[0], dist)
+
+        for y_edge in (max_y, min_y):
+            if y_edge*ray_dir[1]>0:
+                inter_x = y_edge/ray_dir[1]*ray_dir[0]
+                if (max_x - inter_x)*(min_x - inter_x) <= 0:
+                    dist = min(y_edge/ray_dir[1], dist)
+
+        return dist
+
     def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
         """Отрисовка агента и его визуальных индикаторов"""
         x, y = (self.x + offset[0], self.y + offset[1])
@@ -265,7 +303,7 @@ class Agent(WorldObject):
         # Отрисовка лучей зрения
         for i in range(self.VISION_RAYS):
             dist = (1.0 - self.inputs[4 * i]) * self.VISION_DISTANCE
-            color = [c * 255.0 for c in self.inputs[4 * i + 1:4 * i + 4]]
+            color = [int(c * 255.0) for c in self.inputs[4 * i + 1:4 * i + 4]]
 
             ray_angle = (self.angle - self.VISION_ANGLE / 2 +
                          (i / (self.VISION_RAYS - 1)) * self.VISION_ANGLE)
