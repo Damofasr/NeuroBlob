@@ -95,11 +95,11 @@ class NeuroBlob:
 
     def learn(self, reward: float, lr: float = 0.01) -> None:
         """
-        Обучение методом Хебба с подкреплением
-
+        Обучение методом Хебба с регуляризацией
+        
         Args:
-            reward: Величина подкрепления (-1.0 до 1.0)
-            lr: Скорость обучения
+            scale: Масштаб изменений весов сети
+            forgotten_rate: Скорость забывания (затухание всех весов)
         """
         delta = lr * reward * np.outer(self.state, self.state)
         self.W += delta[-self.n_recurrent:, :]

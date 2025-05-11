@@ -38,7 +38,13 @@ class World:
         self._add_wall((self.width/2, self.height), (self.width, wall_width))
 
     def _add_wall(self, pos, size):
-
+        """
+        Добавляет стену в мир по указанной позиции и размеру
+        
+        Args:
+            pos (Tuple[float, float]): Координаты центра стены (x, y)
+            size (Tuple[float, float]): Размеры стены (ширина, высота)
+        """
         obj = Wall(pos, size=size)
         category = obj.category
 
