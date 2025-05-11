@@ -110,15 +110,8 @@ class SimulationManager:
         """Основной цикл обновления"""
         self.current_tick += 1
         self.world.update()
-        self._check_agents_state()
         for agent in self.world.get_objects('agent'):
             self._evaluate_agent(agent)
-
-    def _check_agents_state(self) -> None:
-        """Проверка состояния агентов и обновление лучшего"""
-        for agent in self.world.get_objects('agent'):
-            if agent.health <= 0:
-                self.world.remove_object(agent)
 
     def _evaluate_agent(self, agent: Agent) -> None:
         """Оценка пригодности агента"""
