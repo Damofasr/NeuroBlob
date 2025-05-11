@@ -47,7 +47,7 @@ class SimulationManager:
 
     def _load_initial_brain(self) -> None:
         """Загрузка начального мозга из файла"""
-        temp_agent = Agent(0, 0)
+        temp_agent = Agent((0, 0))
         temp_agent.brain.load(self.brain_file)
         self.best_agent = temp_agent
         print(f"Загружен мозг из {self.brain_file}")

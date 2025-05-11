@@ -19,7 +19,7 @@ class WorldObject:
     """
     category = 'worldobject'
 
-    def __init__(self, x: float, y: float,
+    def __init__(self, pos: Tuple[float, float],
                  size: Union[float, Tuple[float, float]] = 1.0,
                  color: Tuple[int, int, int] = (255, 255, 255)
                  ):
@@ -27,14 +27,12 @@ class WorldObject:
         Инициализация объекта
 
         Args:
-            x: Начальная X-координата
-            y: Начальная Y-координата
+            pos (Tuple[float, float]): Начальные координаты (x, y)
             size: Размер объекта. Может быть кругом или прямоугольником
             color: Цвет отрисовки
         """
         self.id = uuid.uuid4()
-        self.x = x
-        self.y = y
+        self.x, self.y = pos
         self.size = size
         self.color = color
 
@@ -127,7 +125,7 @@ class WorldObject:
 
 
     @property
-    def position(self) -> np.ndarray:
+    def position(self) -> Union[np.ndarray, Tuple[float, float]]:
         """Текущая позиция в виде numpy массива [x, y]"""
         return np.array([self.x, self.y])
 

@@ -39,7 +39,7 @@ class World:
 
     def _add_wall(self, pos, size):
 
-        obj = Wall(pos[0], pos[1], size=size)
+        obj = Wall(pos, size=size)
         category = obj.category
 
         # Добавляем в категорию
@@ -69,11 +69,13 @@ class World:
         if not hasattr(obj, 'radius'):
             return set()
 
+        x, y = obj.position
+
         # Рассчитываем границы объекта в относительных координатах
-        left = (obj.x - obj.width/2) / self.width
-        right = (obj.x + obj.width/2) / self.width
-        bottom = (obj.y - obj.height/2) / self.height
-        top = (obj.y + obj.height/2) / self.height
+        left = (x - obj.width/2) / self.width
+        right = (x + obj.width/2) / self.width
+        bottom = (y - obj.height/2) / self.height
+        top = (y + obj.height/2) / self.height
 
         # Преобразуем в индексы сетки
         min_col = max(0, int(left * self.grid_size[0]))
@@ -111,7 +113,7 @@ class World:
         Args:
             obj_class (type): Класс создаваемого объекта
             count (int): Количество объектов для создания
-            pos (Optional[float]): Фиксированные X,Y-координата (None для случайной)
+            pos (Optional[Tuple[float, float]]): Фиксированные координаты (x, y) (None для случайной)
 
         Returns:
             List[WorldObject]: Список созданных объектов
@@ -119,9 +121,9 @@ class World:
         added = []
         for _ in range(count):
             # Генерируем координаты если не заданы
-            pos_x, pos_y = pos if pos is not None else (random.uniform(0, self.width), random.uniform(0, self.height))
+            obj_pos = pos if pos is not None else (random.uniform(0, self.width), random.uniform(0, self.height))
 
-            obj = obj_class(pos_x, pos_y)
+            obj = obj_class(obj_pos)
             category = obj.category
 
             # Добавляем в категорию
@@ -164,19 +166,19 @@ class World:
             return set().union(*self.objects_by_category.values())
         return self.objects_by_category.get(category, set()).copy()
 
-    def get_objects_in_area(self, x: float, y: float,
+    def get_objects_in_area(self, pos: Tuple[float, float],
                             radius: float) -> Set[WorldObject]:
         """
         Возвращает объекты в заданной области используя пространственную сетку
 
         Args:
-            x (float): X-координата центра области
-            y (float): Y-координата центра области
+            pos (Tuple[float, float]): Координаты центра области (x, y)
             radius (float): Радиус поиска
 
         Returns:
             Set[WorldObject]: Найденные объекты
         """
+        x, y = pos
         # Рассчитываем границы поиска
         left = max(0.0, (x - radius) / self.width)
         right = min(1.0, (x + radius) / self.width)
@@ -197,7 +199,7 @@ class World:
         # Точная проверка расстояния
         radius_sq = radius ** 2
         return {obj for obj in candidates
-                if (obj.x - x) ** 2 + (obj.y - y) ** 2 <= (radius + obj.radius) ** 2}
+                if sum((obj.position - pos) ** 2) <= (radius + obj.radius) ** 2}
 
     def update(self):
         """Основной метод обновления состояния мира"""
@@ -205,14 +207,14 @@ class World:
         # Фаза действий
         for obj in self.get_objects('agent'):
             old_cells = self._get_object_cells(obj)
-            nearests = self.get_objects_in_area(obj.x, obj.y, obj.grid_radius)
+            nearests = self.get_objects_in_area(obj.position, obj.grid_radius)
             interacted_object = obj.update(nearests)
 
             if interacted_object:
                 self.remove_object(interacted_object)
                 self.add_object(type(interacted_object))
 
-            closest = self.get_objects_in_area(obj.x, obj.y, obj.radius)
+            closest = self.get_objects_in_area(obj.position, obj.radius)
             for close in closest:
                 old_cells = self._get_object_cells(close)
                 obj.collide(close)

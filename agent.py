@@ -40,15 +40,14 @@ class Agent(WorldObject):
     BITING_COST = 0.005
     REGEN_COST = PASSIVE_COST
 
-    def __init__(self, x: float, y: float):
+    def __init__(self, pos: Tuple[float, float]):
         """
         Инициализация агента
 
         Args:
-            x (float): Начальная X-координата
-            y (float): Начальная Y-координата
+            pos (Tuple[float, float]): Начальные координаты (x, y)
         """
-        super().__init__(x, y, size=6, color=(0, 100, 255))
+        super().__init__(pos, size=6, color=(0, 100, 255))
         self.angle: float = random.uniform(0, 2 * math.pi)
         self.energy: float = 1.0
         self.health: float = 1.0
@@ -222,8 +221,8 @@ class Agent(WorldObject):
                               obj: WorldObject) -> Optional[float]:
         """Расчёт пересечения луча с круглым объектом"""
         dx, dy = ray_dir
-        Lx = obj.x - self.x
-        Ly = obj.y - self.y
+
+        Lx, Ly = obj.position - self.position
 
         t_m = Lx * Lx + Ly * Ly
         if t_m > (self.VISION_DISTANCE + obj.radius) ** 2:

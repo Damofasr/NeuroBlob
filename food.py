@@ -14,17 +14,16 @@ class Food(WorldObject):
     ENERGY_COST = 0.2
     HEALTH_COST = 0.0
 
-    def __init__(self, x: float, y: float,
+    def __init__(self, pos: Tuple[float, float],
                  color: Tuple[int, int, int] = (0, 255, 0)):
         """
         Инициализация еды
 
         Args:
-            x: X-координата
-            y: Y-координата
+            pos (Tuple[float, float]): Координаты (x, y)
             color: Цвет отрисовки
         """
-        super().__init__(x, y, size=3, color=color)
+        super().__init__(pos, size=3, color=color)
 
 
 class Poison(Food):
@@ -38,14 +37,13 @@ class Poison(Food):
     ENERGY_COST = 0.0
     HEALTH_COST = -0.1
 
-    def __init__(self, x: float, y: float,
+    def __init__(self, pos: Tuple[float, float],
                  color: Tuple[int, int, int] = (128, 0, 128)):
         """
         Инициализация яда
 
         Args:
-            x: X-координата
-            y: Y-координата
+            pos (Tuple[float, float]): Координаты (x, y)
             color: Цвет отрисовки
         """
-        super().__init__(x, y, color=color)
+        super().__init__(pos, color=color)
