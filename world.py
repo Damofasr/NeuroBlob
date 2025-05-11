@@ -240,11 +240,11 @@ class World:
         """Отрисовка всех объектов мира"""
         grid_color = (100, 100, 100)
         for i in range(0, self.grid_size[0]+1):
-            x = min(i*self.width/self.grid_size[0] + offset[0], self.width-1)
-            pygame.draw.line(surface, grid_color, (x, 0 + offset[1]), (x, self.height + offset[1]), 1)
+            x = int(min(i*self.width/self.grid_size[0] + offset[0], self.width-1))
+            pygame.draw.line(surface, grid_color, (x, int(0 + offset[1])), (x, int(self.height + offset[1])), 1)
         for i in range(0, self.grid_size[1]+1):
-            y = min(i*self.height/self.grid_size[1] + offset[1], self.height-1)
-            pygame.draw.line(surface, grid_color, (0 + offset[0], y), (self.width + offset[0], y), 1)
+            y = int(min(i*self.height/self.grid_size[1] + offset[1], self.height-1))
+            pygame.draw.line(surface, grid_color, (int(0 + offset[0]), y), (int(self.width + offset[0]), y), 1)
 
         for obj in self.get_objects():
             obj.draw(surface, offset)

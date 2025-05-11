@@ -12,8 +12,7 @@ class WorldObject:
     Атрибуты:
         category (str): Категория объекта, отражающая ожидаемое поведение и способ взаимодействия (переопределяется в потомках)
         id (uuid.UUID): Уникальный идентификатор объекта
-        x (float): X-координата центра
-        y (float): Y-координата центра
+        _position (np.ndarray): Координаты центра объекта [x, y]
         size (Union[float, Tuple[float, float]]): Размер объекта для круга или прямоугольника
         color (Tuple[int, int, int]): Цвет в формате RGB
     """
@@ -32,7 +31,7 @@ class WorldObject:
             color: Цвет отрисовки
         """
         self.id = uuid.uuid4()
-        self.x, self.y = pos
+        self._position = np.array(pos, dtype=np.float32)
         self.size = size
         self.color = color
 
@@ -124,14 +123,17 @@ class WorldObject:
 
             case (True, False):
                 # Круг и неподвижный прямоугольник: корректируем только круг
-                closest_x = np.clip(self.x,
-                                    obj.x - obj.width / 2,
-                                    obj.x + obj.width / 2)
-                closest_y = np.clip(self.y,
-                                    obj.y - obj.height / 2,
-                                    obj.y + obj.height / 2)
+                x, y = self._position
+                obj_x, obj_y = obj._position
+                
+                closest_x = np.clip(x,
+                                   obj_x - obj.width / 2,
+                                   obj_x + obj.width / 2)
+                closest_y = np.clip(y,
+                                   obj_y - obj.height / 2,
+                                   obj_y + obj.height / 2)
 
-                d_pos = np.array([self.x - closest_x, self.y - closest_y])
+                d_pos = np.array([x - closest_x, y - closest_y])
                 distance = np.hypot(d_pos[0], d_pos[1])
 
                 if distance < self.radius and distance != 0:
@@ -148,14 +150,24 @@ class WorldObject:
                 pass
 
     @property
-    def position(self) -> Union[np.ndarray, Tuple[float, float]]:
+    def position(self) -> np.ndarray:
         """Текущая позиция в виде numpy массива [x, y]"""
-        return np.array([self.x, self.y])
+        return self._position
 
     @position.setter
-    def position(self, pos: np.ndarray) -> None:
+    def position(self, pos: Union[np.ndarray, Tuple[float, float]]) -> None:
         """Установка новой позиции"""
-        self.x, self.y = pos
+        self._position = np.array(pos, dtype=np.float32)
+        
+    @property
+    def x(self) -> float:
+        """X-координата объекта (только для чтения)"""
+        return self._position[0]
+        
+    @property 
+    def y(self) -> float:
+        """Y-координата объекта (только для чтения)"""
+        return self._position[1]
 
     def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
         """
@@ -165,15 +177,19 @@ class WorldObject:
             surface: Целевая поверхность для рисования
             offset: Смещение координат (для камеры)
         """
+        x, y = self._position
         if self.is_circle:
             pygame.draw.circle(
                 surface,
                 self.color,
-                (int(self.x + offset[0]), int(self.y + offset[1])),
+                (int(x + offset[0]), int(y + offset[1])),
                 int(self.radius)
             )
         if self.is_rectangle:
-            pygame.draw.rect(surface,
-                             self.color,
-                             (self.x-self.width/2, self.y-self.height/2, self.width, self.height)
-                             )
+            rect = (
+                int(x - self.width/2) + offset[0],
+                int(y - self.height/2) + offset[1],
+                int(self.width),
+                int(self.height)
+            )
+            pygame.draw.rect(surface, self.color, rect)
