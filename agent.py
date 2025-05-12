@@ -49,18 +49,17 @@ class Agent(WorldObject):
         """
         super().__init__(pos, size=6, color=(0, 100, 255))
         self.angle: float = random.uniform(0, 2 * math.pi)
-        self.energy: float = 1.0
-        self.health: float = 1.0
         self.age: int = 0
         self.score: int = 0
         self.interacted_object = None
 
-        self.inputs: List[float] = []
-        self.outputs: List[float] = [0.0, 0.0, 0.0]  # d_theta, velocity, eat_flag
-
         n_input = self.VISION_RAYS * 4 + 2
         n_output = 3
         n_hidden = (n_input + n_output) * 2
+
+        self.inputs: List[float] = []
+        self.outputs: List[float] = [0.0, 0.0, 0.0]  # d_theta, velocity, eat_flag
+
         self.brain = NeuroBlob(n_input=n_input, n_hidden=n_hidden,
                                n_output=n_output, allow_self_connections=True)
 
@@ -142,10 +141,12 @@ class Agent(WorldObject):
         prev_h = self.health
 
         if eat_flag > self.CONSUME_LEVEL:
-            self._consume_if_possible(nearests)
+            self._bite_if_possible(nearests)
 
+        # Расход энергии на движение и существование
         total_cost = self.PASSIVE_COST + self.MOVEMENT_COST_FACTOR * velocity ** 2
-        self._apply_energy_cost(total_cost)
+        self._apply_effect(energy_delta=-total_cost)
+        
         self._restore_health()
 
         # Механизм обучения
@@ -178,26 +179,17 @@ class Agent(WorldObject):
         new_pos = self.position + np.array([dx, dy])
         self.position = new_pos
 
-    def _apply_energy_cost(self, cost: float) -> None:
-        """Расход энергии с учётом возможного дефицита"""
-        if self.energy > cost:
-            self.energy -= cost
-        else:
-            deficit = cost - self.energy
-            self.energy = 0.0
-            self.health = max(0.0, self.health - deficit)
-
     def _restore_health(self) -> None:
         """Восстановление здоровья за счёт энергии"""
         if self.health < 1.0:
-            heal = min(self.REGEN_COST, 1.0 - self.health, self.energy)
-            self.health += heal
-            self.energy -= heal
+            heal_amount = min(self.REGEN_COST, 1.0 - self.health, self.energy)
+            self._apply_effect(energy_delta=-heal_amount, health_delta=heal_amount)
 
-    def _consume_if_possible(self, nearests: Set[WorldObject]) -> None:
-        """Попытка потребления ближайшего объекта"""
-        self._apply_energy_cost(self.BITING_COST)
-
+    def _bite_if_possible(self, nearests: Set[WorldObject]) -> None:
+        """Попытка укусить ближайший объект"""
+        # Расход энергии на попытку укуса
+        self._apply_effect(energy_delta=-self.BITING_COST)
+        
         for obj in nearests:
             dx = obj.x - self.x
             dy = obj.y - self.y
@@ -206,24 +198,37 @@ class Agent(WorldObject):
 
             if distance > (self.radius + obj.radius)*1.2 or abs(angle) > self.VISION_ANGLE / 2:
                 continue
-
-            match obj.category:
-                case 'food':
-                    self._process_consumption(obj)
-                    self.interacted_object = obj
-                case _:
-                    pass
-
+            
+            # Определяем силу укуса
+            bite_force = 1.0
+            
+            # Обрабатываем укус объекта
+            self._process_bite(obj, bite_force)
             return
-
-    def _process_consumption(self, food: WorldObject) -> None:
-        """Обработка успешного потребления объекта"""
-        self.energy = min(1.0, self.energy + food.ENERGY_COST)
-        self.health = max(0.0, self.health + food.HEALTH_COST)
-
-        self.score += 1 if food.ENERGY_COST else -1
+            
+    def _process_bite(self, obj: WorldObject, bite_force: float = 1.0) -> None:
+        """
+        Обработка результатов укуса объекта
+        
+        Args:
+            obj: Укушенный объект
+            bite_force: Сила укуса
+        """
+        # Получаем эффект от укуса
+        energy_effect, health_effect = obj.bite(bite_force)
+        
+        # Применяем эффект к агенту
+        self._apply_effect(energy_effect, health_effect)
+        
+        # Обновление счета
+        self.score += 1 if energy_effect > 0 else (-1 if health_effect < 0 else 0)
+        
+        # Обучение (если включено)
         if self.LEARNING:
             self.brain.learn(scale=0.0001)
+        
+        # Запоминаем объект для возврата из update
+        self.interacted_object = obj
 
     def _intersect_ray_circle(self, ray_dir: Tuple[float, float],
                               obj: WorldObject) -> Optional[float]:

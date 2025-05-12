@@ -15,6 +15,8 @@ class WorldObject:
         _position (np.ndarray): Координаты центра объекта [x, y]
         size (Union[float, Tuple[float, float]]): Размер объекта для круга или прямоугольника
         color (Tuple[int, int, int]): Цвет в формате RGB
+        health (float): Здоровье объекта, значение от 0 до 1
+        energy (float): Энергия объекта, значение от 0 до 1
     """
     category = 'worldobject'
 
@@ -34,6 +36,8 @@ class WorldObject:
         self._position = np.array(pos, dtype=np.float32)
         self.size = size
         self.color = color
+        self.health = 1.0  # Базовое здоровье для всех объектов
+        self.energy = 1.0  # Базовая энергия для всех объектов
 
     def __hash__(self) -> int:
         """Хеш на основе уникального ID"""
@@ -63,6 +67,46 @@ class WorldObject:
             Optional[WorldObject]: Объект, с которым произошло взаимодействие (если было)
         """
         pass
+        
+    def _apply_effect(self, energy_delta: float = 0.0, health_delta: float = 0.0) -> None:
+        """
+        Применяет изменения энергии и здоровья с учетом их взаимосвязи
+        
+        Правила:
+        1. Если energy_delta отрицательный и превышает текущую энергию,
+           недостаток вычитается из здоровья
+        2. Энергия и здоровье всегда остаются в диапазоне [0, 1]
+        3. Здоровье никогда не переливается в энергию
+        
+        Args:
+            energy_delta (float): Изменение энергии (+ добавление, - расход), по умолчанию 0
+            health_delta (float): Изменение здоровья (+ восстановление, - урон), по умолчанию 0
+        """
+        # Обработка энергии
+        if energy_delta < 0 and abs(energy_delta) > self.energy:
+            # Недостаток энергии вычитается из здоровья
+            health_deficit = abs(energy_delta) - self.energy
+            health_delta -= health_deficit
+            self.energy = 0.0
+        else:
+            # Нормальное изменение энергии
+            self.energy = max(0.0, min(1.0, self.energy + energy_delta))
+        
+        # Обработка здоровья (независимо от энергии)
+        self.health = max(0.0, min(1.0, self.health + health_delta))
+    
+    def bite(self, bite_force: float = 1.0) -> Tuple[float, float]:
+        """
+        Базовый метод обработки укуса объекта
+        
+        Args:
+            bite_force: Сила укуса (множитель эффекта)
+            
+        Returns:
+            Tuple[float, float]: Кортеж (влияние на энергию, влияние на здоровье)
+        """
+        # Базовая реализация не дает никакого эффекта
+        return 0.0, 0.0
 
     @property
     def grid_radius(self) -> float:
