@@ -79,8 +79,8 @@ class SimulationManager:
 
     def _spawn_objects(self) -> None:
         """Создание начальных объектов в мире"""
-        self.world.add_object(Food, count=20)
-        self.world.add_object(Poison, count=20)
+        self.world.add_object(Food, count=50)
+        self.world.add_object(Poison, count=50)
         self.world.add_object(Agent, count=10)
 
     def _create_new_population(self) -> None:

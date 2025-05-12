@@ -72,9 +72,6 @@ class World:
         Returns:
             Set[Tuple[int, int]]: Множество координат ячеек
         """
-        if not hasattr(obj, 'radius'):
-            return set()
-
         x, y = obj.position
 
         # Рассчитываем границы объекта в относительных координатах
@@ -218,23 +215,24 @@ class World:
             nearests = self.get_objects_in_area(obj.position, obj.grid_radius)
             interacted_object = obj.update(nearests)
 
-            if interacted_object:
-                self.remove_object(interacted_object)
-                self.add_object(type(interacted_object))
+            # Обрабатываем взаимодействовавший объект
+            if interacted_object and interacted_object.health <= 0:
+                if interacted_object.category == 'food':
+                    self.remove_object(interacted_object)
+                    self.add_object(type(interacted_object))
 
             closest = self.get_objects_in_area(obj.position, obj.radius)
             for close in closest:
                 old_cells = self._get_object_cells(close)
                 obj.collide(close)
                 self._update_object_in_grid(close, old_cells)
+            
+            self._update_object_in_grid(obj, obj_old_cells)
 
             # Проверка здоровья агента после всех взаимодействий
-            if hasattr(obj, 'health') and obj.health <= 0:
+            if obj.health <= 0:
                 self.remove_object(obj)
                 continue
-            
-            # Обновляем только если агент всё ещё жив
-            self._update_object_in_grid(obj, obj_old_cells)
 
     def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
         """Отрисовка всех объектов мира"""
