@@ -108,6 +108,18 @@ class World:
             self._remove_from_grid(obj, old_cells - new_cells)
         self._add_to_grid(obj, new_cells - (old_cells or set()))
 
+    def with_grid_update(self, obj: WorldObject, action) -> None:
+        """
+        Выполняет действие и обновляет положение объекта в сетке
+        
+        Args:
+            obj (WorldObject): Объект для обновления
+            action: Функция или лямбда, которая будет выполнена над объектом
+        """
+        old_cells = self._get_object_cells(obj)
+        action(obj)
+        self._update_object_in_grid(obj, old_cells)
+
     def add_object(self, obj_class: type, count: int = 1,
                    pos: Optional[Tuple[float, float]] = None) -> List[WorldObject]:
         """
@@ -209,30 +221,31 @@ class World:
         # Получаем копию списка агентов
         agents = list(self.get_objects('agent'))
         
-        # Фаза действий
+        # Обновляем каждого агента
         for obj in agents:
-            obj_old_cells = self._get_object_cells(obj)
-            nearests = self.get_objects_in_area(obj.position, obj.grid_radius)
-            interacted_object = obj.update(nearests)
-
-            # Обрабатываем взаимодействовавший объект
-            if interacted_object and interacted_object.health <= 0:
-                if interacted_object.category == 'food':
-                    self.remove_object(interacted_object)
-                    self.add_object(type(interacted_object))
-
-            closest = self.get_objects_in_area(obj.position, obj.radius)
-            for close in closest:
-                old_cells = self._get_object_cells(close)
-                obj.collide(close)
-                self._update_object_in_grid(close, old_cells)
+            # Выполняем все обновления агента в одной функции
+            def update_object(obj):
+                # Фаза обновления
+                nearests = self.get_objects_in_area(obj.position, obj.grid_radius)
+                interacted_object = obj.update(nearests)
+                
+                # Обрабатываем взаимодействовавший объект
+                if interacted_object and interacted_object.health <= 0:
+                    if interacted_object.category == 'food':
+                        self.remove_object(interacted_object)
+                        self.add_object(type(interacted_object))
+                
+                # Фаза коллизий
+                closests = self.get_objects_in_area(obj.position, obj.radius)
+                for closest in closests:
+                    if closest != obj:  # Избегаем коллизии с самим собой
+                        self.with_grid_update(closest, lambda c: obj.collide(c))
+                
+            self.with_grid_update(obj, update_object)
             
-            self._update_object_in_grid(obj, obj_old_cells)
-
             # Проверка здоровья агента после всех взаимодействий
             if obj.health <= 0:
                 self.remove_object(obj)
-                continue
 
     def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
         """Отрисовка всех объектов мира"""
