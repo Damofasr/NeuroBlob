@@ -155,7 +155,7 @@ class Agent(WorldObject):
 
             # Легкое затухание весов для предотвращения застревания
             if self.age % 100 == 0:  # Периодическое затухание
-                self.brain.W *= 0.999
+                self.brain.W *= 0.99999
 
     @property
     def grid_radius(self) -> float:
@@ -173,8 +173,8 @@ class Agent(WorldObject):
 
     def _move(self, velocity: float) -> None:
         """Перемещение агента с учётом границ мира"""
-        dx = math.cos(self.angle) * velocity
-        dy = math.sin(self.angle) * velocity
+        dx = math.cos(self.angle) * velocity * self.health
+        dy = math.sin(self.angle) * velocity * self.health
 
         new_pos = self.position + np.array([dx, dy])
         self.position = new_pos
@@ -196,7 +196,7 @@ class Agent(WorldObject):
             distance = math.hypot(dx, dy)
             angle = (math.atan2(dy, dx) + math.pi - self.angle) % math.tau - math.pi
 
-            if distance > (self.radius + obj.radius)*1.2 or abs(angle) > self.VISION_ANGLE / 2:
+            if distance > (self.radius + obj.radius)*1.5 or abs(angle) > self.VISION_ANGLE / 2:
                 continue
             
             # Определяем силу укуса

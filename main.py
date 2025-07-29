@@ -47,11 +47,11 @@ def handle_key_events(event: pygame.event.Event,
         case pygame.K_p:  # Пауза
             gui.drawing = not gui.drawing
         case pygame.K_s:  # Сохранение мозга
-            save_filename = 'best_brain.json'
+            save_filename = 'brains/best_brain_7.json'
             manager.best_agent.brain.save(save_filename)
             print(f'Мозг сохранён в {save_filename}')
         case pygame.K_l:  # Загрузка мозга
-            load_filename = 'best_brain.json'
+            load_filename = 'brains/best_brain_7.json'
             manager.best_agent.brain.load(load_filename)
             print(f'Мозг загружен из {load_filename}')
         case pygame.K_m:  # Мутация
