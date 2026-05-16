@@ -1,9 +1,9 @@
 import pygame
 import matplotlib.pyplot as plt
 from typing import List, Dict
-from world import World
-from simulation_manager import SimulationManager
-from config import *
+from src.core.world import World
+from src.core.simulation_manager import SimulationManager
+from src.config import *
 
 
 class NeuroBlobGUI:
@@ -29,7 +29,7 @@ class NeuroBlobGUI:
         pygame.display.set_caption("NeuroBlob Evolution Simulator")
 
         try:
-            self.font = pygame.font.Font('fonts/PressStart2P.ttf', 16)  # Путь к файлу шрифта
+            self.font = pygame.font.Font('data/resources/PressStart2P.ttf', 16)  # Путь к файлу шрифта
         except FileNotFoundError:
             print("Шрифт не найден, используется системный")
             self.font = pygame.font.SysFont('Arial', 16, bold=True)

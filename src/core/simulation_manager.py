@@ -1,9 +1,9 @@
 import copy
 from typing import Optional
-from agent import Agent
-from food import Food, Poison
-from world import World
-from config import *
+from src.core.agent import Agent
+from src.core.food import Food, Poison
+from src.core.world import World
+from src.config import *
 
 
 class SimulationManager:

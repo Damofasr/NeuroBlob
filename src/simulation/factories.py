@@ -1,4 +1,4 @@
-from components import (
+from src.simulation.components import (
     Position,
     Velocity,
     Health,
@@ -15,7 +15,7 @@ from components import (
     Score,
     BrainIO,
 )
-from neuroblob import NeuroBlob
+from src.core.neuroblob import NeuroBlob
 
 # Фабрика для создания агента
 def create_agent(world, x, y, color=(0, 100, 255), health=1.0, energy=1.0, size=6.0,

@@ -44,7 +44,7 @@ class SpatialGrid:
         return result
 
 import esper
-from components import Position
+from src.simulation.components import Position
 
 class GridUpdateSystem(esper.Processor):
     def __init__(self, grid: SpatialGrid):

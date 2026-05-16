@@ -213,19 +213,28 @@ class WorldObject:
         """Y-координата объекта (только для чтения)"""
         return self._position[1]
 
-    def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0)) -> None:
+    def draw(self, surface: pygame.Surface, offset: Tuple[int, int] = (0, 0),
+             dimmed: bool = False, dim_factor: float = 0.35) -> None:
         """
         Отрисовка объекта на поверхности
 
         Args:
             surface: Целевая поверхность для рисования
             offset: Смещение координат (для камеры)
+            dimmed: Нужно ли отрисовать объект затемнённым
+            dim_factor: Коэффициент затемнения
         """
+        def _dim_color(color):
+            if dimmed:
+                return tuple(max(0, min(int(c * dim_factor), 255)) for c in color[:3])
+            return color
+
         x, y = self._position
+        draw_color = _dim_color(self.color)
         if self.is_circle:
             pygame.draw.circle(
                 surface,
-                self.color,
+                draw_color,
                 (int(x + offset[0]), int(y + offset[1])),
                 int(self.radius)
             )
@@ -236,4 +245,4 @@ class WorldObject:
                 int(self.width),
                 int(self.height)
             )
-            pygame.draw.rect(surface, self.color, rect)
+            pygame.draw.rect(surface, draw_color, rect)

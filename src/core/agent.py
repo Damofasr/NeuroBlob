@@ -4,8 +4,8 @@ import pygame
 import pygame.gfxdraw
 from typing import Optional, Tuple, List, Set
 import numpy as np
-from world_object import WorldObject
-from neuroblob import NeuroBlob
+from src.core.world_object import WorldObject
+from src.core.neuroblob import NeuroBlob
 
 
 class Agent(WorldObject):

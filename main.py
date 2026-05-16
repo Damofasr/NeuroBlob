@@ -1,15 +1,15 @@
 import sys
 import pygame
-from neuroblob_gui import NeuroBlobGUI
-from simulation_manager import SimulationManager
-from config import *
+from src.gui.neuroblob_gui import NeuroBlobGUI
+from src.core.simulation_manager import SimulationManager
+from src.config import *
 
 
 def main() -> None:
     """Основная функция"""
 
     gui = NeuroBlobGUI()
-    manager = SimulationManager(brain_file='brains/best_brain_6.json')  # Передаем аргумент
+    manager = SimulationManager(brain_file='data/brains/best_brain_6.json')  # Передаем аргумент
 
     running = True
     while running:
@@ -47,11 +47,11 @@ def handle_key_events(event: pygame.event.Event,
         case pygame.K_p:  # Пауза
             gui.drawing = not gui.drawing
         case pygame.K_s:  # Сохранение мозга
-            save_filename = 'brains/best_brain_7.json'
+            save_filename = 'data/brains/best_brain_7.json'
             manager.best_agent.brain.save(save_filename)
             print(f'Мозг сохранён в {save_filename}')
         case pygame.K_l:  # Загрузка мозга
-            load_filename = 'brains/best_brain_7.json'
+            load_filename = 'data/brains/best_brain_7.json'
             manager.best_agent.brain.load(load_filename)
             print(f'Мозг загружен из {load_filename}')
         case pygame.K_m:  # Мутация

@@ -1,4 +1,4 @@
-from world_object import WorldObject
+from src.core.world_object import WorldObject
 from typing import Tuple
 
 

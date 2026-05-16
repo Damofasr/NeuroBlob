@@ -1,6 +1,6 @@
 import math
 import esper
-from components import Position, Velocity, Health, Energy, Brain, Metabolism, Consumable, Vision, Angle, WantsToBite, BrainIO, Score, Size, Color, Category
+from src.simulation.components import Position, Velocity, Health, Energy, Brain, Metabolism, Consumable, Vision, Angle, WantsToBite, BrainIO, Score, Size, Color, Category
 
 
 def _clamp01(x: float) -> float:

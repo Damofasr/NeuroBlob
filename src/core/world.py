@@ -1,8 +1,8 @@
 import random
 import pygame
-from wall import Wall
+from src.core.wall import Wall
 from typing import Dict, Set, Tuple, List, Optional
-from world_object import WorldObject
+from src.core.world_object import WorldObject
 
 
 class World:

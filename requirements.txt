@@ -1,0 +1,4 @@
+pygame>=2.0.0
+numpy>=1.20.0
+matplotlib>=3.3.0
+esper>=0.8.0
