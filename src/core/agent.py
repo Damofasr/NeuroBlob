@@ -191,12 +191,14 @@ class Agent(WorldObject):
         self._apply_effect(energy_delta=-self.BITING_COST)
         
         for obj in nearests:
+            if obj is self or obj.category == 'wall':
+                continue
             dx = obj.x - self.x
             dy = obj.y - self.y
             distance = math.hypot(dx, dy)
             angle = (math.atan2(dy, dx) + math.pi - self.angle) % math.tau - math.pi
 
-            if distance > (self.radius + obj.radius)*1.5 or abs(angle) > self.VISION_ANGLE / 2:
+            if distance > (self.radius + obj.radius)*1.2 or abs(angle) > self.VISION_ANGLE / 2:
                 continue
             
             # Определяем силу укуса
